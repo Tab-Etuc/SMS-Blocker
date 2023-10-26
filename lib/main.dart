@@ -96,9 +96,11 @@ class _MyAppState extends State<MyApp> {
 Future<String> _sendPostRequest(String messageBody) async {
   const url = 'https://api.cofacts.tw/graphql';
   final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+  final truncatedBody =
+      messageBody.length > 50 ? messageBody.substring(0, 50) : messageBody;
   final body = json.encode({
     "query":
-        "{ ListArticles(filter: { moreLikeThis: { like: \"$messageBody\" } }, first: 1) { edges { node { id, text, articleReplies { replyType } } } } }"
+        "{ ListArticles(filter: { moreLikeThis: { like: \"$truncatedBody\" } }, first: 1) { edges { node { id, text, articleReplies { replyType } } } } }"
   });
 
   final response = await http.post(
@@ -125,7 +127,7 @@ Future<String> _sendPostRequest(String messageBody) async {
           }
         }
         if (count > 0) {
-          return '此則簡訊共有${count}個人認為是詐騙訊息！\n詳情請見：|${responseData["data"]["ListArticles"]["edges"][0]["node"]["id"]}';
+          return '此則簡訊共有$count個人認為是詐騙訊息！\n詳情請見：|${responseData["data"]["ListArticles"]["edges"][0]["node"]["id"]}';
         }
       }
     }
@@ -211,7 +213,7 @@ class _MessagesListViewState extends State<_MessagesListView> {
         return ExpansionTile(
           title: Text('${message.sender} [$date]'),
           subtitle: Text(
-              '${truncatedBody}${message.body!.length > 15 ? '...[點擊展開]' : ''}'),
+              '$truncatedBody${message.body!.length > 15 ? '...[點擊展開]' : ''}'),
           onExpansionChanged: (expanded) {
             if (expanded && !_futures.containsKey(i)) {
               setState(() {
@@ -244,14 +246,14 @@ class _MessagesListViewState extends State<_MessagesListView> {
                             Text(text),
                             ElevatedButton(
                               onPressed: () async {
-                                final Uri url = Uri.parse(
-                                    'https://cofacts.tw/article/${id}');
+                                final Uri url =
+                                    Uri.parse('https://cofacts.tw/article/$id');
 
                                 if (await canLaunchUrl(url)) {
                                   await launchUrl(url);
                                 }
                               },
-                              child: Text('https://cofacts.tw/article/${id}'),
+                              child: Text('https://cofacts.tw/article/$id'),
                             ),
                             Text(message.body!)
                           ]));
